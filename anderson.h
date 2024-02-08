@@ -11,7 +11,6 @@
 #include <thrust/iterator/zip_iterator.h>
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_blas.h>
-#include <iostream>
 
 // Perform simple mixing on the GPU
 __global__ void simpleMix(double *wp_gpu, double *Dh_gpu_0, const double lambda, const int M)
