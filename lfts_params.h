@@ -107,32 +107,6 @@ class lfts_params {
         double sigma() { return sigma_; }
         double n() { return C_*V_; }                // Total number of polymers in the system
 
-        // Setters (for later box move)
-        void L(int i, double Li) {
-            L_[i] = Li;
-            update_V(L_);
-            update_Sigma(M_, dt_, C_, V_);
-
-        }
-        void L(double Lx, double Ly, double Lz) {
-            L_[0] = Lx;
-            L_[1] = Ly;
-            L_[2] = Lz;
-            update_V(L_);
-            update_Sigma(M_, dt_, C_, V_);
-            ////// PLACEHOLDER FOR CODE TO UPDATE XbN OR XeN //////
-        }
-        // Setters (for later adaptive time step)
-        void dt(double dt) {
-            dt_ = dt;
-            update_Sigma(M_, dt_, C_, V_);
-        }
-        void C(double C) {
-            C_ = C;
-            update_Sigma(M_, dt_, C_, V_);
-            ////// PLACEHOLDER FOR CODE TO UPDATE XbN OR XeN //////
-        }
-
 
         void saveOutputParams(std::string fileName, bool append=false) {
             double XN_out = chi_b_;
@@ -208,14 +182,5 @@ class lfts_params {
 
             return 1.0 - sum - 3*R0/(ell*sqrt(M_PI*Nbar)*X);
         }
-
-        void update_V(double *L) {
-            V_ = L[0]*L[1]*L[2];
-        }
-
-        void update_Sigma(int M, double dt, double C, double V) {
-            sigma_ = sqrt(2.0*M*dt/(C*V));
-        }
-
 
 };
