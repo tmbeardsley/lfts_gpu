@@ -11,6 +11,7 @@
 #include <thrust/iterator/zip_iterator.h>
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_blas.h>
+#include <iostream>
 
 // Perform simple mixing on the GPU
 __global__ void simpleMix(double *wp_gpu, double *Dh_gpu_0, const double lambda, const int M)
@@ -40,7 +41,6 @@ struct mult_2dbls
 class anderson {
     int TpB_;                   // GPU threads per block (default: 512)
     int nhMax_;                 // Maximum # histories (default: 10)
-    int M_;                     // Total number of field mesh points
 
     // Mathematical arrays
     double **DD_;               
@@ -56,6 +56,9 @@ class anderson {
     typedef thrust::device_ptr<double> dp;
     typedef thrust::tuple<dp,dp> t_dpD_dpD;
     typedef thrust::zip_iterator<t_dpD_dpD> z_dpD_dpD;
+
+    // Simulation constants derived from the input file (see lfts_params.h for details)
+    int M_;
 
     public:
         // Constructor

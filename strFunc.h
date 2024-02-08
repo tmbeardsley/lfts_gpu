@@ -1,7 +1,8 @@
 // #####################################################################################
 // Provides the public methods: void sample(...) and void save(...), 
 // which take samples of the structure funtion, S(k), and save the spherically-averaged 
-// S(k) to file
+// S(k) to file.
+// S(k) should only be calculated in simulations keeping L[] and XbN constant.
 // #####################################################################################
 
 #pragma once
@@ -11,9 +12,7 @@
 #include <math.h>
 #include <complex>
 #include <fstream>
-#include <iostream>
-
-
+#include "sorts.h"
 
 
 // Multiply and sum propagators for calculating either phiA[r] or phiB[r]
@@ -26,15 +25,12 @@ __global__ void add_norm(double *S_gpu, cufftDoubleComplex *wk_gpu, const int Mk
 
 
 
-class strFunc {
-    // strFunc-specific variables                  
+class strFunc {              
     int TpB_;                       // GPU threads per block (default: 512)
     double *S_gpu_;                 // Collects sum of |wk_[k]| resulting from calls to: sample(double *w_gpu)
     double *K_;                     // Modulus of wavevector k
     double dK_;                     // Maximum allowed difference used to define like wave vectors for spherical averaging
     double coeff_;                  // A constant used in saving the structure function
-    double chi_b_;                  // Bare chi of the simulation
-    int Mk_;                        // Total number of field mesh points in k-space
     int *wt_;                       // Weighting of contribution from wavevector k
     int *P_;                        // Map transforming K_[] into ascending order
     int nsamples_;                  // Number of structure function samples taken
@@ -42,9 +38,13 @@ class strFunc {
     std::complex<double> *wk_;      // Used to copy w-(k) from GPU to host
     cufftDoubleComplex* wk_gpu_;    // w-(k) on the GPU
 
+    // Simulation constants derived from the input file (see lfts_params.h for details)
+    double chi_b_;
+    int Mk_;
+
     public:
         // Constructor
-        strFunc(int *m, double *L, int M, int Mk, double CV, double chi_b, double dK = 1E-5, int TpB = 512) {
+        strFunc(int *m, double *L, int M, int Mk, double CV, double chi_b, int TpB = 512, double dK = 1E-5) {
             TpB_ = TpB;
             Mk_ = Mk;
             dK_ = dK;
@@ -70,7 +70,8 @@ class strFunc {
             calcK(K_, m, L);
 
             // Populate the map, P_, which puts the wavevector moduli, K_, into ascending order
-            calcSortedKMap(P_, K_);
+            for (int k=0; k<Mk_; k++) P_[k] = k;
+            sorts::quicksortMap(K_, P_, 0, Mk_-1);
         }
 
         // Sample norm(w-(k)) 
@@ -158,34 +159,6 @@ class strFunc {
                     }
                 }
             }
-        }
-
-        // Populate the map, P, to index K in ascending order
-        void calcSortedKMap(int *P, double *K) {
-            int k;
-
-            // Initial (unsorted) index map of K-vectors
-            for (k=0; k<Mk_; k++) P[k] = k;
-
-            // Optimised bubble sort (simple since only called once)
-            int n_new, n = Mk_;
-            do {
-                n_new = 0;
-                for (k=1; k<n; k++) {
-                    if (K[P[k-1]] > K[P[k]]) {
-                        swap(P[k-1], P[k]);
-                        n_new = k;
-                    }
-                }
-                n = n_new;
-            } while (n > 1);
-        }
-
-        // Swap two integers
-        void swap(int &i, int &j) {
-            int temp = i;
-            i = j;
-            j = temp;
         }
 
 };
