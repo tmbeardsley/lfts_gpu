@@ -4,7 +4,7 @@ Langevin Field-Theoretic Simulation of Diblock Copolymers on the GPU
 See https://tbeardsley.com/projects/lfts/fts_gpu for a detailed discussion of this project.
 
 Input file format:
-Line1: N NA XN C Ndt isXeN
+Line1: N NA XN C Ndt isXeN\n
 Line2: mx my mz Lx Ly Lz
 Line3: n_eq n_st n_smpl loadType
 Lines 4->(M+3): W-(r)
