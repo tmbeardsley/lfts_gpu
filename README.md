@@ -6,7 +6,6 @@ See https://tbeardsley.com/projects/lfts/fts_gpu for a detailed discussion of th
 Input file format:
 
 Line1: N NA XN C Ndt isXeN
-
 Line2: mx my mz Lx Ly Lz
 
 Line3: n_eq n_st n_smpl loadType
