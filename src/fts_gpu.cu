@@ -23,7 +23,7 @@ int main (int argc, char *argv[])
 
     // New lfts_simulation object with input file name specified
     // and 512 threads per block on the gpu
-    lfts_simulation *lfts_sim = new lfts_simulation("input", 512);
+    lfts_simulation *lfts_sim = new lfts_simulation(inputFile, 512);
     
     // Time the equilibration period
     cout << "Starting Equilibration..." << endl;
