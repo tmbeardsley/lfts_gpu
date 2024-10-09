@@ -1,4 +1,4 @@
-# Langevin Field-Theoretic Simulation of Diblock Copolymers on CPUs
+# Langevin Field-Theoretic Simulation of Diblock Copolymers on GPUs
 
 See https://www.tbeardsley.com/projects/lfts/fts_gpu for a detailed discussion of this project.<br>
 
@@ -11,14 +11,14 @@ Two methods of compiling the program are available:<br>
 <ol>
   <li><b>comp.sh</b>
     <br>
-    A simple bash script to create a 'build' directory containing the compiled program code: lfts-cpu.<br><br>
+    A simple bash script to create a 'build' directory containing the compiled program code: lfts-gpu.<br><br>
     On a Linux system, run the bash script from the top directory via:<br>
     <b>sh comp.sh</b>
     <br><br>
   </li>
   <li><b>CMake</b>
     <br>
-    CMakeLists.txt specifies the required commands for CMake to create (and run) Makefiles, which create a 'build' directory and compile the program code as: lfts-cpu.<br><br>
+    CMakeLists.txt specifies the required commands for CMake to create (and run) Makefiles, which create a 'build' directory and compile the program code as: lfts-gpu.<br><br>
     From the top directory, run: <br>
     <b>cmake -B build</b><br>
     <b>cmake --build build</b>
@@ -27,9 +27,9 @@ Two methods of compiling the program are available:<br>
 
 
 ## Running the program
-After compilation the executable file, lfts-cpu, resides in the 'build' directory. An input file must be supplied to the executable at the command line, examples of which are contained in the 'input_files' folder. 
+After compilation the executable file, lfts-gpu, resides in the 'build' directory. An input file must be supplied to the executable at the command line, examples of which are contained in the 'input_files' folder. 
 For example, from the top level of the directory tree, the program could be run via: <br><br>
-<b>./build/lfts-cpu ./input_files/input</b>
+<b>./build/lfts-gpu ./input_files/input</b>
 
 
 ## Input Files
