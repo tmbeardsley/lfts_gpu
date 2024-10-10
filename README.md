@@ -4,7 +4,7 @@ See https://www.tbeardsley.com/projects/lfts/fts_gpu for a detailed discussion o
 
 ## Required Dependencies:
 GSL - GNU Scientific Library (https://www.gnu.org/software/gsl/)<br>
-CUDA Tookkit (https://developer.nvidia.com/cuda-toolkit/)<br>
+CUDA Toolkit (https://developer.nvidia.com/cuda-toolkit/)<br>
 
 ## Compiling:
 Two methods of compiling the program are available:<br>
