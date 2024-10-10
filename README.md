@@ -4,7 +4,7 @@ See https://www.tbeardsley.com/projects/lfts/fts_gpu for a detailed discussion o
 
 ## Required Dependencies:
 GSL - GNU Scientific Library (https://www.gnu.org/software/gsl/)<br>
-FFTW3 Fast Fourier Transform Library (https://www.fftw.org/)<br>
+CUDA Tookkit (https://developer.nvidia.com/cuda-toolkit/)<br>
 
 ## Compiling:
 Two methods of compiling the program are available:<br>
