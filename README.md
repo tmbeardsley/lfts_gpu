@@ -1,12 +1,13 @@
 # Langevin Field-Theoretic Simulation of Diblock Copolymers on GPUs
 
+## Description
 See https://www.tbeardsley.com/projects/lfts/fts_gpu for a detailed discussion of this project.<br>
 
-## Required Dependencies:
+## Required Dependencies
 GSL - GNU Scientific Library (https://www.gnu.org/software/gsl/)<br>
 CUDA Toolkit (https://developer.nvidia.com/cuda-toolkit/)<br>
 
-## Compiling:
+## Compiling
 Two methods of compiling the program are available:<br>
 <ol>
   <li><b>comp.sh</b>
@@ -35,7 +36,7 @@ For example, from the top level of the directory tree, the program could be run 
 ## Input Files
 The input_files directory contains example input files that can be supplied to the program from the command line.
 
-### Input file format:
+### Input file format
 Line 1: <em>N NA XN C Ndt isXeN</em><br>
 Line 2: <em>mx my mz Lx Ly Lz</em><br>
 Line 3: <em>n_eq n_st n_smpl save_freq loadType</em><br>
@@ -44,7 +45,7 @@ Lines (M+4)->(2M+3): w+(r)<br>
 
 Note: A real-space position r = (x,y,z) corresponds to a mesh point position r_m = (i,j,k), where i=0->mx-1, j=0->my-1 and k=0->mz-1 are integers. The elements of the fields, W-(r) and w+(r), are then written in ascending order of the row-major index: p = mx\*(i\*my+j)+k.
 
-#### Parameter descriptions:
+#### Parameter descriptions
 <em>N</em> is the number of monomers in a single polymer chain (integer).<br>
 <em>NA</em> is the number of monomers in the A-block of a polymer chain (integer).<br>
 <em>XN</em> is the interaction strength between A and B-type monomers (double).<br>
@@ -60,7 +61,7 @@ Note: A real-space position r = (x,y,z) corresponds to a mesh point position r_m
 <em>loadType</em> instructs the program whether to load the W-(r) and w+(r) fields from the proceeding file lines (loadType=1), start from a disordered state (loadType=0) or start from a (300) lamellar phase (loadType=2).<br><br>
 M = (mx\*my\*mz) is the total number of mesh points, such that the proceeding 2*M lines of the file can hold W-(r) and w+(r) fields to load.
 
-## Output files:
+## Output files
 #### w_eq_<step_number>
 The state of the W-(r) and w+(r) fields at simulation step number <step_number> during the equilibration period. First three lines are simulation parameters so it can be used as an input file.<br>
 
