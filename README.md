@@ -2,6 +2,9 @@
 
 ## Description
 See https://www.tbeardsley.com/projects/lfts/fts_gpu for a detailed discussion of this project.<br>
+| Lamellar | Cylindrical | Spherical | Gyroid | Fddd |
+| :---: | :---: | :---: | :---: | :---: |
+| <img src="https://www.tbeardsley.com/imgs/projects/lfts/lfts_gpu/DBC_L.png" width="150px"> | <img src="https://www.tbeardsley.com/imgs/projects/lfts/lfts_gpu/DBC_C.png" width="150px"> | <img src="https://www.tbeardsley.com/imgs/projects/lfts/lfts_gpu/DBC_S.png" width="150px"> | <img src="https://www.tbeardsley.com/imgs/projects/lfts/lfts_gpu/DBC_G.png" width="150px"> | <img src="https://www.tbeardsley.com/imgs/projects/lfts/lfts_gpu/DBC_Fddd.png" width="150px"> |
 
 ## Required Dependencies
 GSL - GNU Scientific Library (https://www.gnu.org/software/gsl/)<br>
@@ -76,4 +79,9 @@ The state of the phi-(r) and phi+(r) fields at simulation step number <step_numb
 #### phi_eq_<step_number>
 The state of the phi-(r) and phi+(r) fields at simulation step number <step_number> during the statistics gathering period.<br>
 
+## Performance
 
+| Time per simulation step (GPU vs. CPU) | Speedup (T<sub>CPU</sub>/T<sub>GPU</sub>) |
+| :---: | :---: |
+| <img src="https://www.tbeardsley.com/imgs/projects/lfts/lfts_gpu/sim_time_cpu_vs_gpu.png" width="450px"> | <img src="https://www.tbeardsley.com/imgs/projects/lfts/lfts_gpu/speedup_gpu_vs_cpu.png" width="450px"> |
+| Average time taken per simulation step in the gpu and cpu L-FTS codes as a function of the linear mesh dimension, m, for cubic grids with m<sub>&gamma;</sub>=m and &gamma;=x,y,z. Note the logarithmic scales on the x and y axes. | Speedup of the gpu L-FTS code relative to the cpu version vs the linear mesh dimension, m, for cubic grids with m<sub>&gamma;</sub>=m and &gamma;=x,y,z. Note the logarithmic scales on the x and y axes. |
