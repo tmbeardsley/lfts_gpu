@@ -1,10 +1,11 @@
 # Langevin Field-Theoretic Simulation of Diblock Copolymers on GPUs
 
-## 1. Description
-See https://www.tbeardsley.com/projects/lfts/fts_gpu for a detailed discussion of this project.<br>
 | Lamellar | Cylindrical | Spherical | Gyroid | Fddd |
 | :---: | :---: | :---: | :---: | :---: |
 | <img src="https://www.tbeardsley.com/imgs/projects/lfts/lfts_gpu/DBC_L.png" width="150px"> | <img src="https://www.tbeardsley.com/imgs/projects/lfts/lfts_gpu/DBC_C.png" width="150px"> | <img src="https://www.tbeardsley.com/imgs/projects/lfts/lfts_gpu/DBC_S.png" width="150px"> | <img src="https://www.tbeardsley.com/imgs/projects/lfts/lfts_gpu/DBC_G.png" width="150px"> | <img src="https://www.tbeardsley.com/imgs/projects/lfts/lfts_gpu/DBC_Fddd.png" width="150px"> |
+
+## 1. Description
+See https://www.tbeardsley.com/projects/lfts/fts_gpu for a detailed discussion of this project.<br>
 
 ## 2. Required Dependencies
 GSL - GNU Scientific Library (https://www.gnu.org/software/gsl/)<br>
