@@ -22,10 +22,11 @@
 #include "lfts_params.h"
 #include "file_IO.h"
 #include <memory>
+#include "cuda_smart_pointer.h"
 
 
 class lfts_simulation {
-    double *w_gpu_;                         // GPU array containing: N*w-(r), N*w+(r), phi-(r), phi+(r)
+    unique_cuda_ptr<double> w_gpu_;         // GPU array containing: N*w-(r), N*w+(r), phi-(r), phi+(r)
     std::unique_ptr<lfts_params> P_;        // Object to hold the simulation parameters - automatically updates derived parameters
     std::unique_ptr<diblock> dbc_;          // Diblock object for calculating phi-(r) and phi+(r)
     std::unique_ptr<anderson> AM_;          // Anderson mixing object to solve for w+(r)

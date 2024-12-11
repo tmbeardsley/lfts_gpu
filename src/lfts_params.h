@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string>
 #include <fstream>
-#include <math.h>
+#include <cmath>
 #include <iostream>
 #include <memory>
 
@@ -24,9 +24,7 @@ class lfts_params {
     double C_;                      // Dimensionless concentration, Nbar^0.5
     double dt_;                     // Langevin time step multiplied by N
     int    isXeN_;                  // Whether XN in the input file is bare or effective
-    //int    *m_;                 
     std::unique_ptr<int[]> m_;      // Number of mesh points [mx,my,mz]
-    //double *L_;                 
     std::unique_ptr<double[]> L_;   // Dimensions of simulation box [Lx,Ly,Lz] in units of aN^0.5
     int    equil_its_;              // Number of Langevin steps for equilibration
     int    sim_its_;                // Number of Langevin steps for statistics

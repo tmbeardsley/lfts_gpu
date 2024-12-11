@@ -47,19 +47,19 @@ anderson::anderson(int M, int maxHist, int TpB) :
     U_(std::make_unique<double[]>(maxHist*maxHist)),
     V_(std::make_unique<double[]>(maxHist)),
     C_(std::make_unique<double[]>(maxHist)),
+    Dh_gpu_mem_(create_unique_cuda_memory<double>((maxHist+1)*M)),
     Dh_gpu_(std::make_unique<double*[]>(maxHist+1)),
+    wh_gpu_mem_(create_unique_cuda_memory<double>((maxHist+1)*M)),
     wh_gpu_(std::make_unique<double*[]>(maxHist+1)),
     A_cpy_(std::make_unique<double[]>(maxHist*maxHist)),
     Y_cpy_(std::make_unique<double[]>(maxHist)),
     M_(M)
 {
     // Mathematical array memory on the GPU
-    GPU_ERR(cudaMalloc((void**)&Dh_gpu_mem_, (nhMax_+1)*M_*sizeof(double)));
-    for (int i=0; i<nhMax_+1; i++) Dh_gpu_[i] = Dh_gpu_mem_ + i*M_;
+    for (int i=0; i<nhMax_+1; i++) Dh_gpu_[i] = Dh_gpu_mem_.get() + i*M_;
 
     // Mathematical array memory on the GPU
-    GPU_ERR(cudaMalloc((void**)&wh_gpu_mem_, (nhMax_+1)*M_*sizeof(double)));
-    for (int i=0; i<nhMax_+1; i++) wh_gpu_[i] = wh_gpu_mem_ + i*M_;
+    for (int i=0; i<nhMax_+1; i++) wh_gpu_[i] = wh_gpu_mem_.get() + i*M_;
 }
 
 
@@ -137,8 +137,6 @@ int anderson::mix(diblock *dbc, int maxIter, double errTol, double *w_gpu) {
 
 // Destructor
 anderson::~anderson() {
-    GPU_ERR(cudaFree(Dh_gpu_mem_));
-    GPU_ERR(cudaFree(wh_gpu_mem_));
 }
 
 

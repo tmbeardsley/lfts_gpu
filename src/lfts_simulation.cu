@@ -29,7 +29,7 @@ lfts_simulation::lfts_simulation(std::string inputFile, int TpB)
     std::cout << "RNG seed: " << iseed << std::endl;
 
     // Allocate memory for field array on the GPU
-    GPU_ERR(cudaMalloc((void**)&w_gpu_, 4*M_*sizeof(double)));
+    w_gpu_ = create_unique_cuda_memory<double>(4*M_);
 
     // Create a new diblock object
     std::cout << "creating diblock object..." << std::endl;
@@ -56,21 +56,21 @@ lfts_simulation::lfts_simulation(std::string inputFile, int TpB)
     else generate_field(w.get(), P_->loadType());
 
     // Copy w-(r) and w+(r) from host to GPU
-    GPU_ERR(cudaMemcpy(w_gpu_, w.get(), 2*M_*sizeof(double), cudaMemcpyHostToDevice));
+    GPU_ERR(cudaMemcpy(w_gpu_.get(), w.get(), 2*M_*sizeof(double), cudaMemcpyHostToDevice));
 
     // Perform an initial mix to get phi-(r) and phi+(r) from the input fields
     std::cout << "Initial Anderson mix..." << std::endl;
-    AM_ -> mix(dbc_.get(), 200, 1e-4, w_gpu_);
+    AM_ -> mix(dbc_.get(), 200, 1e-4, w_gpu_.get());
 
     // Output initial fields
     saveStdOutputFile("w_0");
-    file_IO::saveGPUArray(w_gpu_+2*M_, "phi_0", 2*M_);
+    file_IO::saveGPUArray(w_gpu_.get()+2*M_, "phi_0", 2*M_);
 }
 
 
 // Destructor
 lfts_simulation::~lfts_simulation() {
-    GPU_ERR(cudaFree(w_gpu_));
+
 }
 
 
@@ -80,21 +80,21 @@ void lfts_simulation::equilibrate() {
     for (it=1; it<=P_->equil_its(); it++) {
 
         // Perform a Langevin step with symmetrised noise to update w-(r)
-        Langevin_->step_wm(w_gpu_, RNG_, P_->XbN(), P_->sigma(), P_->dt());
+        Langevin_->step_wm(w_gpu_.get(), RNG_, P_->XbN(), P_->sigma(), P_->dt());
 
         // Calculate saddle point value of w+(r), phi-(r) and phi+(r)
-        AM_->mix(dbc_.get(), 200, 1e-4, w_gpu_);
-        std::cout << "lnQ = " << dbc_->calc_concs(w_gpu_) << std::endl;
+        AM_->mix(dbc_.get(), 200, 1e-4, w_gpu_.get());
+        std::cout << "lnQ = " << dbc_->calc_concs(w_gpu_.get()) << std::endl;
 
         // Save to file every save_freq_ steps
         if (it%P_->save_freq()==0) { 
             saveStdOutputFile("w_eq_" + std::to_string(it));
-            file_IO::saveGPUArray(w_gpu_+2*M_, "phi_eq_"+std::to_string(it), 2*M_);
+            file_IO::saveGPUArray(w_gpu_.get()+2*M_, "phi_eq_"+std::to_string(it), 2*M_);
         }
     }
     // Final save to file at end of equilibration period
     saveStdOutputFile("w_eq_" + std::to_string(it-1));
-    file_IO::saveGPUArray(w_gpu_+2*M_, "phi_eq_"+std::to_string(it-1), 2*M_);
+    file_IO::saveGPUArray(w_gpu_.get()+2*M_, "phi_eq_"+std::to_string(it-1), 2*M_);
 }
 
 
@@ -104,26 +104,26 @@ void lfts_simulation::statistics() {
     for (it=1; it<=P_->sim_its(); it++) {
 
         // Perform a Langevin step with symmetrised noise to update w-(r)
-        Langevin_->step_wm(w_gpu_, RNG_, P_->XbN(), P_->sigma(), P_->dt());
+        Langevin_->step_wm(w_gpu_.get(), RNG_, P_->XbN(), P_->sigma(), P_->dt());
 
         // Calculate saddle point value of w+(r), phi-(r) and phi+(r)
-        AM_->mix(dbc_.get(), 200, 1e-4, w_gpu_);
-        std::cout << "lnQ = " << dbc_->calc_concs(w_gpu_) << std::endl;
+        AM_->mix(dbc_.get(), 200, 1e-4, w_gpu_.get());
+        std::cout << "lnQ = " << dbc_->calc_concs(w_gpu_.get()) << std::endl;
 
         // Sample statistics every sample_freq_ steps
         if (it%P_->sample_freq()==0) {
-            Sk_->sample(w_gpu_);
+            Sk_->sample(w_gpu_.get());
         }
         // Save fields to file every save_freq_ steps
         if (it%P_->save_freq()==0) { 
             saveStdOutputFile("w_st_" + std::to_string(it));
-            file_IO::saveGPUArray(w_gpu_+2*M_, "phi_st_" + std::to_string(it), 2*M_);
+            file_IO::saveGPUArray(w_gpu_.get()+2*M_, "phi_st_" + std::to_string(it), 2*M_);
             Sk_->save("struct_st_"+ std::to_string(it));
         }
     }
     // Final save to file at end of equilibration period
     saveStdOutputFile("w_st_" + std::to_string(it-1));
-    file_IO::saveGPUArray(w_gpu_+2*M_, "phi_st_" + std::to_string(it-1), 2*M_);
+    file_IO::saveGPUArray(w_gpu_.get()+2*M_, "phi_st_" + std::to_string(it-1), 2*M_);
     Sk_->save("struct_st_"+ std::to_string(it-1));
 }
 
@@ -131,10 +131,10 @@ void lfts_simulation::statistics() {
 // Calculate the diblock copolymer Hamiltonian
 double lfts_simulation::getH() {
     // Calculate the natural log of the partition function
-    double lnQ = dbc_->calc_concs(w_gpu_);
+    double lnQ = dbc_->calc_concs(w_gpu_.get());
 
     // Create a Thrust device pointer to the GPU memory for the fields
-    thrust::device_ptr<double> dp = thrust::device_pointer_cast(w_gpu_);
+    thrust::device_ptr<double> dp = thrust::device_pointer_cast(w_gpu_.get());
 
     // Calculate the sum of w+(r) and the sum of w-(r)^2 on the GPU
     double w_sum = thrust::reduce(dp+M_, dp+2*M_, 0.0, thrust::plus<double>());
@@ -148,7 +148,7 @@ double lfts_simulation::getH() {
 // Save data in a standard format to be used as in input file
 void lfts_simulation::saveStdOutputFile(std::string fileName) {
     P_->saveOutputParams(fileName);
-    file_IO::saveGPUArray(w_gpu_, fileName, 2*M_, true);
+    file_IO::saveGPUArray(w_gpu_.get(), fileName, 2*M_, true);
 }
 
 

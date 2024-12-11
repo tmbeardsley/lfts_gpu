@@ -4,6 +4,7 @@
 // #############################################################################
 
 #include "file_IO.h"
+#include <memory>
 
 namespace file_IO {
 
@@ -36,10 +37,9 @@ namespace file_IO {
 
     // Save a GPU array to file
     void saveGPUArray(double *arr_gpu, std::string fileName, int n, bool append) {
-        double *arr_cpu = new double[n];
-        GPU_ERR(cudaMemcpy(arr_cpu,arr_gpu,n*sizeof(double),cudaMemcpyDeviceToHost));
-        saveArray(arr_cpu, fileName, n, append);
-        delete[] arr_cpu;
+        std::unique_ptr<double[]> arr_cpu = std::make_unique<double[]>(n);
+        GPU_ERR(cudaMemcpy(arr_cpu.get(), arr_gpu, n*sizeof(double), cudaMemcpyDeviceToHost));
+        saveArray(arr_cpu.get(), fileName, n, append);
     }
 
 }

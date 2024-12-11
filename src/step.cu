@@ -30,6 +30,8 @@ __global__ void Mult_self(double *a, const double *b, int const M)
 // Constructor
 step::step(int NA, int NB, int *m, double *L, int M, int Mk, int TpB) :
     TpB_(TpB),
+    g_gpu_(create_unique_cuda_memory<double>(2*Mk)),                // g_gpu_ contains two copies of g[] so that q1[k] and q2[k] can be multiplied on the GPU at the same time
+    qk_gpu_(create_unique_cuda_memory<cufftDoubleComplex>(2*Mk)),   // Allocate memory for q1[k] and q2[k], stored in contigious memory
     NA_(NA),
     NB_(NB),
     M_(M),
@@ -39,20 +41,14 @@ step::step(int NA, int NB, int *m, double *L, int M, int Mk, int TpB) :
 
     for (int i=0; i<3; i++) m_[i] = m[i];
 
-    // Allocate memory for g_gpu and copy g from the host. 
-    // g_gpu_ contains two copies of g[] so that q1[k] and q2[k] can be multiplied on the GPU at the same time
-    GPU_ERR(cudaMalloc((void**)&g_gpu_,2*Mk*sizeof(double)));
-
     // Calculate the lookup table for g (copied to gpu in function for box move to be added later)
     update_g_lookup(L);
-
-    // Allocate memory for q1[k] and q2[k], stored in contigious memory
-    GPU_ERR(cudaMalloc((void**)&qk_gpu_,2*Mk*sizeof(cufftDoubleComplex)));
 
     // Configure cufft plans. cufftPlanMany used for batched processing
     GPU_ERR(cufftPlanMany(&qr_to_qk_,3,m_.get(),NULL,1,0,NULL,1,0,CUFFT_D2Z,2));
     GPU_ERR(cufftPlanMany(&qk_to_qr_,3,m_.get(),NULL,1,0,NULL,1,0,CUFFT_Z2D,2));
 }
+
 
 // Calculate propagators for the next monomer given propagators of previous monomer
 // q_in  = q{i}(r), q^{N+1-i}(r)
@@ -61,13 +57,13 @@ step::step(int NA, int NB, int *m, double *L, int M, int Mk, int TpB) :
 void step::fwd(double* q_in, double* q_out, double *h_gpu, int i)
 {
     // Fourier transform q{i}(r),q^{N+1-i}(r) to k-space: qk_gpu_(k)
-    GPU_ERR(cufftExecD2Z(qr_to_qk_, q_in, qk_gpu_));
+    GPU_ERR(cufftExecD2Z(qr_to_qk_, q_in, qk_gpu_.get()));
 
     // Multiply qk_gpu_(k) by g_gpu_(k)
-    Mult_self <<<(2*Mk_+TpB_-1)/TpB_, TpB_>>> (qk_gpu_, g_gpu_, 2*Mk_);
+    Mult_self <<<(2*Mk_+TpB_-1)/TpB_, TpB_>>> (qk_gpu_.get(), g_gpu_.get(), 2*Mk_);
 
     // Fourier transform qk_gpu_(k) to real-space: q_out[r]
-    GPU_ERR(cufftExecZ2D(qk_to_qr_, qk_gpu_, q_out));
+    GPU_ERR(cufftExecZ2D(qk_to_qr_, qk_gpu_.get(), q_out));
 
     // Multiply q_out[r] by hA[r] or hB[r] (depending on monomer index) to get q{i+1}(r)
     if (i < NA_) Mult_self<<<(M_+TpB_-1)/TpB_,TpB_>>>(q_out,h_gpu,M_);
@@ -78,14 +74,12 @@ void step::fwd(double* q_in, double* q_out, double *h_gpu, int i)
     else Mult_self<<<(M_+TpB_-1)/TpB_,TpB_>>>(q_out+M_,h_gpu,M_);
 }
 
+
 // Destructor
 step::~step() {
     GPU_ERR(cufftDestroy(qr_to_qk_));
     GPU_ERR(cufftDestroy(qk_to_qr_));
-    GPU_ERR(cudaFree(g_gpu_));
-    GPU_ERR(cudaFree(qk_gpu_));
 }
-
 
 
 // Calculate the Boltzmann weight of the bond potential in k-space, _g[k]
@@ -110,12 +104,7 @@ void step::update_g_lookup(double *L) {
             }
         }
     }
-    GPU_ERR(cudaMemcpy(g_gpu_, g.get(), Mk_*sizeof(double), cudaMemcpyHostToDevice));
-    GPU_ERR(cudaMemcpy(g_gpu_+Mk_, g.get(), Mk_*sizeof(double), cudaMemcpyHostToDevice));
+    GPU_ERR(cudaMemcpy(g_gpu_.get(), g.get(), Mk_*sizeof(double), cudaMemcpyHostToDevice));
+    GPU_ERR(cudaMemcpy(g_gpu_.get()+Mk_, g.get(), Mk_*sizeof(double), cudaMemcpyHostToDevice));
 }
-
-
-
-
-
 

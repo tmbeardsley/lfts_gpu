@@ -16,23 +16,21 @@
 #include <numeric>
 #include <algorithm>
 #include <memory>
+#include "cuda_smart_pointer.h"
 
 
 class strFunc {              
     int TpB_;                                       // GPU threads per block (default: 512)
-    double *S_gpu_;                                 // Collects sum of |wk_[k]| resulting from calls to: sample(double *w_gpu)
+    unique_cuda_ptr<double> S_gpu_;                 // Collects sum of |wk_[k]| resulting from calls to: sample(double *w_gpu)
     std::unique_ptr<double[]> K_;                   // Modulus of wavevector k
     double dK_;                                     // Maximum allowed difference used to define like wave vectors for spherical averaging
     double coeff_;                                  // A constant used in saving the structure function
-    //int *wt_;                       
-    std::unique_ptr<int[]> wt_;                     // Weighting of contribution from wavevector k
-    //int *P_;                        
+    std::unique_ptr<int[]> wt_;                     // Weighting of contribution from wavevector k           
     std::unique_ptr<int[]> P_;                      // Map transforming K_[] into ascending order
     int nsamples_;                                  // Number of structure function samples taken
     cufftHandle wr_to_wk_;                          // cufft plan transforming w-(r) to w-(k)
-    //std::complex<double> *wk_;      
     std::unique_ptr<std::complex<double>[]> wk_;    // Used to copy w-(k) from GPU to host
-    cufftDoubleComplex* wk_gpu_;                    // w-(k) on the GPU
+    unique_cuda_ptr<cufftDoubleComplex> wk_gpu_;    // w-(k) on the GPU
 
     // Simulation constants derived from the input file (see lfts_params.h for details)
     double chi_b_;

@@ -44,27 +44,22 @@ static __global__ void sum_phi(double *phi_gpu, double *q1_gpu, double *q2_gpu, 
 
 // Constructor
 diblock::diblock(int NA, int NB, int *m, double *L, int M, int Mk, int TpB) :
-    Step_(std::make_unique<step>(NA, NB, m, L, M, Mk, TpB))         // New step object containing methods to get next monomer's propagators
+    TpB_(TpB),
+    qr_gpu_(create_unique_cuda_memory<double>(2*(NA+NB+1)*M)),
+    h_gpu_(create_unique_cuda_memory<double>(2*M)),
+    q1_(std::make_unique<double*[]>(NA+NB+1)),
+    q2_(std::make_unique<double*[]>(NA+NB+1)),
+    Step_(std::make_unique<step>(NA, NB, m, L, M, Mk, TpB)),         // New step object containing methods to get next monomer's propagators
+    M_(M),
+    NA_(NA),
+    N_(NA+NB)
 {
-    TpB_ = TpB;
-
-    M_ = M;
-    NA_ = NA;
-    N_ = NA+NB;
-
-    // Allocate gpu memory for h_gpu_ and qr_gpu_
-    GPU_ERR(cudaMalloc((void**)&h_gpu_,2*M*sizeof(double)));
-    GPU_ERR(cudaMalloc((void**)&qr_gpu_,2*(N_+1)*M*sizeof(double)));
-
-    // Allocate arrays of pointers for q_{j=1...N}(r) and q^_{j=1...N}(r)
-    q1_ = std::make_unique<double*[]>(N_+1);
-    q2_ = std::make_unique<double*[]>(N_+1);
 
     // Assign pointers such that q_{1}(r) and q_{N}(r) are in contigious memory,
     // as are q_{2}(r) and q_{N-1}(r), q_{3}(r) and q_{N-2}(r)... etc. (required for cufftPlanMany())
     for (int i=1; i<=N_; i++) {
-        q1_[i] = qr_gpu_ + 2*i*M;
-        q2_[N_+1-i] = qr_gpu_ + (2*i+1)*M;
+        q1_[i] = qr_gpu_.get() + 2*i*M;
+        q2_[N_+1-i] = qr_gpu_.get() + (2*i+1)*M;
     }
 
 }
@@ -79,13 +74,13 @@ double diblock::calc_concs(double *w_gpu) {
     double *phiB_gpu=w_gpu+3*M_;
 
     // Calculate hA[r] and hB[r] on the GPU
-    prepare_h<<<(2*M_+TpB_-1)/TpB_, TpB_>>>(h_gpu_,w_gpu,N_,M_);
+    prepare_h<<<(2*M_+TpB_-1)/TpB_, TpB_>>>(h_gpu_.get(), w_gpu, N_, M_);
 
     // Set initial conditions: q[1][r]=hA[r] and q^[N][r]=hB[r] for all r
-    Array_copy<<<(2*M_+TpB_-1)/TpB_, TpB_>>>(q1_[1],h_gpu_,2*M_);
+    Array_copy<<<(2*M_+TpB_-1)/TpB_, TpB_>>>(q1_[1], h_gpu_.get(), 2*M_);
 
     // Step the propagators q1 and q2 for each subsequent monomer (note q[i],q^[N+1-i]... contigious in memory)
-    for (i=1; i<N_; i++) Step_->fwd(q1_[i], q1_[i+1], h_gpu_, i);
+    for (i=1; i<N_; i++) Step_->fwd(q1_[i], q1_[i+1], h_gpu_.get(), i);
 
     // Calculate single-chain partition function using a Thrust reduction sum
     thrust::device_ptr<double> dp = thrust::device_pointer_cast(q1_[N_]);
@@ -96,7 +91,7 @@ double diblock::calc_concs(double *w_gpu) {
     Array_init<<<(2*M_+TpB_-1)/TpB_, TpB_>>>(phiA_gpu, 0.0, 2*M_);
     for (i=1; i<=NA_; i++) sum_phi<<<(M_+TpB_-1)/TpB_, TpB_>>>(phiA_gpu, q1_[i], q2_[i], M_);
     for (i=NA_+1; i<=N_; i++) sum_phi<<<(M_+TpB_-1)/TpB_, TpB_>>>(phiB_gpu, q1_[i], q2_[i], M_);
-    normalize_phi<<<(M_+TpB_-1)/TpB_, TpB_>>>(w_gpu, h_gpu_, Q, N_, M_);
+    normalize_phi<<<(M_+TpB_-1)/TpB_, TpB_>>>(w_gpu, h_gpu_.get(), Q, N_, M_);
 
     return log(Q);
 }
@@ -104,6 +99,5 @@ double diblock::calc_concs(double *w_gpu) {
 
 // Destructor
 diblock::~diblock() {
-    GPU_ERR(cudaFree(h_gpu_));
-    GPU_ERR(cudaFree(qr_gpu_));
+
 }

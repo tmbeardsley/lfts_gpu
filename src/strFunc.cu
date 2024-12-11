@@ -20,6 +20,7 @@ static __global__ void add_norm(double *S_gpu, cufftDoubleComplex *wk_gpu, const
 // Constructor
 strFunc::strFunc(int *m, double *L, int M, int Mk, double CV, double chi_b, int TpB, double dK) :
     TpB_(TpB),
+    S_gpu_(create_unique_cuda_memory<double>(Mk)),
     K_(std::make_unique<double[]>(Mk)),
     dK_(dK),
     coeff_(CV/(chi_b*chi_b*M*M)),
@@ -27,16 +28,13 @@ strFunc::strFunc(int *m, double *L, int M, int Mk, double CV, double chi_b, int 
     P_(std::make_unique<int[]>(Mk)),
     nsamples_(0),
     wk_(std::make_unique<std::complex<double>[]>(Mk)),
+    wk_gpu_(create_unique_cuda_memory<cufftDoubleComplex>(Mk)),
     chi_b_(chi_b),
     Mk_(Mk)
 {
 
-    // Allocate memory for w-(k) on the GPU
-    GPU_ERR(cudaMalloc((void**)&wk_gpu_, Mk*sizeof(cufftDoubleComplex)));
-
     // Allocate memory for S(k) on the GPU
-    GPU_ERR(cudaMalloc((void**)&S_gpu_, Mk*sizeof(double)));
-    Array_init<<<(Mk_+TpB_-1)/TpB_, TpB_>>>(S_gpu_, 0.0, Mk);
+    Array_init<<<(Mk_+TpB_-1)/TpB_, TpB_>>>(S_gpu_.get(), 0.0, Mk);
 
     // Create a cufft plan for the Fourier transform on the GPU
     GPU_ERR(cufftPlan3d(&wr_to_wk_, m[0], m[1], m[2], CUFFT_D2Z));
@@ -53,10 +51,10 @@ strFunc::strFunc(int *m, double *L, int M, int Mk, double CV, double chi_b, int 
 // Sample norm(w-(k)) 
 void strFunc::sample(double *w_gpu) {
     // Transform w-(r) to k-space to get w-(k)
-    GPU_ERR(cufftExecD2Z(wr_to_wk_, w_gpu, wk_gpu_));
+    GPU_ERR(cufftExecD2Z(wr_to_wk_, w_gpu, wk_gpu_.get()));
 
     // Sample the norm of w-(k) for each wavevector and add to its sum
-    add_norm<<<(Mk_+TpB_-1)/TpB_, TpB_>>>(S_gpu_, wk_gpu_, Mk_);
+    add_norm<<<(Mk_+TpB_-1)/TpB_, TpB_>>>(S_gpu_.get(), wk_gpu_.get(), Mk_);
 
     // Increment the number of samples
     nsamples_++;
@@ -75,7 +73,7 @@ void strFunc::save(std::string fileName, int dp) {
 
     // Copy S_gpu to the host
     S = new double[Mk_];
-    GPU_ERR(cudaMemcpy(S, S_gpu_, Mk_*sizeof(double), cudaMemcpyDeviceToHost));
+    GPU_ERR(cudaMemcpy(S, S_gpu_.get(), Mk_*sizeof(double), cudaMemcpyDeviceToHost));
 
     // Spherical average of S(k)
     for (k=0; k<Mk_; k++) {
@@ -101,8 +99,6 @@ void strFunc::save(std::string fileName, int dp) {
 // Destructor
 strFunc::~strFunc() {
     GPU_ERR(cufftDestroy(wr_to_wk_));
-    GPU_ERR(cudaFree(wk_gpu_));
-    GPU_ERR(cudaFree(S_gpu_));
 }
 
 

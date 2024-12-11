@@ -13,6 +13,7 @@
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_blas.h>
 #include <memory>
+#include "cuda_smart_pointer.h"
 
 
 class anderson {
@@ -24,9 +25,9 @@ class anderson {
     std::unique_ptr<double[]> U_;
     std::unique_ptr<double[]> V_;
     std::unique_ptr<double[]> C_;
-    double *Dh_gpu_mem_;
+    unique_cuda_ptr<double> Dh_gpu_mem_;
     std::unique_ptr<double*[]> Dh_gpu_;
-    double *wh_gpu_mem_;
+    unique_cuda_ptr<double> wh_gpu_mem_;
     std::unique_ptr<double*[]> wh_gpu_;
     std::unique_ptr<double[]> A_cpy_;
     std::unique_ptr<double[]> Y_cpy_;

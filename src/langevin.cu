@@ -13,23 +13,23 @@ static __global__ void langevin_sym(double *w_gpu, double *noise_gpu_new, double
 }
 
 
-
-langevin::langevin(curandGenerator_t &RNG, double sigma, int M, int TpB) {
-    TpB_ = TpB;
-    M_ = M;
-
-    // Allocate memory for Gaussian random noise on the GPU
-    GPU_ERR(cudaMalloc((void**)&noise_gpu_,2*M_*sizeof(double)));
+langevin::langevin(curandGenerator_t &RNG, double sigma, int M, int TpB) :
+    TpB_(TpB),
+    noise_gpu_(create_unique_cuda_memory<double>(2*M)),
+    M_(M)
+{
 
     // Generate initial "previous" Gaussian random noise on the gpu
-    curandGenerateNormalDouble(RNG, noise_gpu_, M_, 0.0, sigma);
-    noise_gpu_prev_ = noise_gpu_;
-    noise_gpu_new_ = noise_gpu_ + M_;
+    curandGenerateNormalDouble(RNG, noise_gpu_.get(), M_, 0.0, sigma);
+    noise_gpu_prev_ = noise_gpu_.get();
+    noise_gpu_new_ = noise_gpu_.get() + M_;
 }
 
+
 langevin::~langevin() {
-    GPU_ERR(cudaFree(noise_gpu_));
+
 }
+
 
 // Perform a Langevin update of the fields using symmetrised noise
 void langevin::step_wm(double* w_gpu, curandGenerator_t &RNG, double XbN, double sigma, double dt)

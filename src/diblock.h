@@ -11,14 +11,15 @@
 #include <thrust/reduce.h>
 #include <thrust/device_ptr.h>
 #include <memory>
+#include "cuda_smart_pointer.h"
 
 
 class diblock {
 
     // Diblock-specific variables
     int TpB_;
-    double *qr_gpu_;                    // Pointer to GPU memory for propagators: q_{i}(r) and q^_{N+1-i}(r) are contigious in memory
-    double *h_gpu_;                     // Pointer to GPU memory for hA(r) and hB(r)
+    unique_cuda_ptr<double> qr_gpu_;    // Pointer to GPU memory for propagators: q_{i}(r) and q^_{N+1-i}(r) are contigious in memory
+    unique_cuda_ptr<double> h_gpu_;     // Pointer to GPU memory for hA(r) and hB(r)
     std::unique_ptr<double*[]> q1_;     // Array of pointers to q_{j=i}(r), where j is the monomer index and i is array index
     std::unique_ptr<double*[]> q2_;     // Array of pointers to q^_{j=N+1-i}(r), where j is the monomer index and i is array index
     std::unique_ptr<step> Step_;        // Step object to get propagators for the next monomer

@@ -4,18 +4,16 @@
 #pragma once
 
 #include <cuda.h>
-#include "GPUerror.h"
 #include <curand.h>
-#include "anderson.h"
-#include "diblock.h"
-#include "lfts_params.h"
+#include "cuda_smart_pointer.h"
+
 
 
 class langevin {
-    int    TpB_;                // GPU threads per block (default: 512)
-    double *noise_gpu_;         // Array holding random noise for current step and previous step
-    double *noise_gpu_new_;     // Pointer to portion of memory for new noise in noise_gpu_[]
-    double *noise_gpu_prev_;    // Pointer to portion of memory for previous noise in noise_gpu_[]
+    int    TpB_;                            // GPU threads per block (default: 512)
+    unique_cuda_ptr<double> noise_gpu_;     // Array holding random noise for current step and previous step
+    double *noise_gpu_new_;                 // Pointer to portion of memory for new noise in noise_gpu_[]
+    double *noise_gpu_prev_;                // Pointer to portion of memory for previous noise in noise_gpu_[]
 
     // Simulation constants derived from the input file (see lfts_params.h for details)
     int    M_;

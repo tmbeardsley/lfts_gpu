@@ -24,7 +24,6 @@ int main (int argc, char *argv[])
 
     // New lfts_simulation object with input file name specified
     // and 512 threads per block on the gpu
-    //lfts_simulation *lfts_sim = new lfts_simulation(inputFile, 512);
     unique_ptr<lfts_simulation> lfts_sim = make_unique<lfts_simulation>(inputFile, 512);
     
     // Time the equilibration period
@@ -47,6 +46,5 @@ int main (int argc, char *argv[])
     cout.precision(6);
     cout << lfts_sim->getH() << endl;
 
-    //delete lfts_sim;
     return 0;
 }
