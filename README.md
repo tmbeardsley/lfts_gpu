@@ -8,7 +8,7 @@
 See https://www.tbeardsley.com/projects/lfts/fts_gpu for a detailed discussion of this project.<br>
 
 ## 2. Required Dependencies
-GSL - GNU Scientific Library (https://www.gnu.org/software/gsl/)<br>
+GSL - GNU Scientific Library (https://www.gnu.org/software/gsl/)<br><br>
 CUDA Toolkit (https://developer.nvidia.com/cuda-toolkit/)<br>
 
 ## 3. Compiling
@@ -25,7 +25,7 @@ Two methods of compiling the program are available:<br>
     <br>
     CMakeLists.txt specifies the required commands for CMake to create (and run) Makefiles, which create a 'build' directory and compile the program code as: lfts-gpu.<br><br>
     From the top directory, run: <br>
-    <b>cmake -B build</b><br>
+    <b>cmake -B build -DCMAKE_BUILD_TYPE=Release</b><br>
     <b>cmake --build build</b>
   </li>
 </ol>
