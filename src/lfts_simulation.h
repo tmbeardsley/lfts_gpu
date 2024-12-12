@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string>
 #include <cuda.h>
-#include "GPUerror.h"
+#include "gpu_helpers/GPUerror.h"
 #include <iostream>
 #include <fstream>
 #include "diblock.h"
@@ -22,7 +22,7 @@
 #include "lfts_params.h"
 #include "file_IO.h"
 #include <memory>
-#include "cuda_smart_pointer.h"
+#include "gpu_helpers/cuda_smart_pointer.h"
 
 
 class lfts_simulation {

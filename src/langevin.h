@@ -5,7 +5,7 @@
 
 #include <cuda.h>
 #include <curand.h>
-#include "cuda_smart_pointer.h"
+#include "gpu_helpers/cuda_smart_pointer.h"
 
 
 

@@ -17,7 +17,6 @@ add_executable(lfts-gpu
                 ./src/fts_gpu.cu 
                 ./src/diblock.cu 
                 ./src/GPUkernels.cu 
-                ./src/GPUerror.cu 
                 ./src/step.cu 
                 ./src/anderson.cu 
                 ./src/field_generator.cc 

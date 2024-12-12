@@ -30,14 +30,16 @@ strFunc::strFunc(int *m, double *L, int M, int Mk, double CV, double chi_b, int 
     wk_(std::make_unique<std::complex<double>[]>(Mk)),
     wk_gpu_(create_unique_cuda_memory<cufftDoubleComplex>(Mk)),
     chi_b_(chi_b),
-    Mk_(Mk)
+    Mk_(Mk),
+    wr_to_wk_(new cufftHandle, cufftDeleter())
+    //wr_to_wk_(std::make_unique<>())
 {
 
     // Allocate memory for S(k) on the GPU
     Array_init<<<(Mk_+TpB_-1)/TpB_, TpB_>>>(S_gpu_.get(), 0.0, Mk);
 
     // Create a cufft plan for the Fourier transform on the GPU
-    GPU_ERR(cufftPlan3d(&wr_to_wk_, m[0], m[1], m[2], CUFFT_D2Z));
+    GPU_ERR(cufftPlan3d(wr_to_wk_.get(), m[0], m[1], m[2], CUFFT_D2Z));
 
     // Populate the wavevector modulus array, K_
     calcK(K_.get(), m, L);
@@ -51,7 +53,7 @@ strFunc::strFunc(int *m, double *L, int M, int Mk, double CV, double chi_b, int 
 // Sample norm(w-(k)) 
 void strFunc::sample(double *w_gpu) {
     // Transform w-(r) to k-space to get w-(k)
-    GPU_ERR(cufftExecD2Z(wr_to_wk_, w_gpu, wk_gpu_.get()));
+    GPU_ERR(cufftExecD2Z(*(wr_to_wk_.get()), w_gpu, wk_gpu_.get()));
 
     // Sample the norm of w-(k) for each wavevector and add to its sum
     add_norm<<<(Mk_+TpB_-1)/TpB_, TpB_>>>(S_gpu_.get(), wk_gpu_.get(), Mk_);
@@ -98,7 +100,7 @@ void strFunc::save(std::string fileName, int dp) {
 
 // Destructor
 strFunc::~strFunc() {
-    GPU_ERR(cufftDestroy(wr_to_wk_));
+    //GPU_ERR(cufftDestroy(wr_to_wk_));
 }
 
 

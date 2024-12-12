@@ -6,19 +6,22 @@
 #pragma once
 #include <cuda.h>
 #include <cufft.h>
-#include "GPUerror.h"
+#include "gpu_helpers/GPUerror.h"
 #include <cmath>
 #include <memory>
-#include "cuda_smart_pointer.h"
+#include "gpu_helpers/cuda_smart_pointer.h"
+#include "gpu_helpers/cufftHelpers.h"
 
 
 class step {
     // Step-specific variables
-    int TpB_;                                       // GPU threads per block (default: 512)
-    unique_cuda_ptr<double> g_gpu_;                 // Bond potential Boltzmann weight, Fourier transformed and /M_ on the GPU
-    unique_cuda_ptr<cufftDoubleComplex> qk_gpu_;    // Fourier transforms of q1 and q2 on the GPU (for cufftPlanMany())
-    cufftHandle qr_to_qk_;                          // cufft plan to transform q1[r] and q2[r] to k-space
-    cufftHandle qk_to_qr_;                          // cufft plan to transform q1[k] and q2[k] to real-space
+    int TpB_;                                               // GPU threads per block (default: 512)
+    unique_cuda_ptr<double> g_gpu_;                         // Bond potential Boltzmann weight, Fourier transformed and /M_ on the GPU
+    unique_cuda_ptr<cufftDoubleComplex> qk_gpu_;            // Fourier transforms of q1 and q2 on the GPU (for cufftPlanMany())
+    //cufftHandle qr_to_qk_;                          
+    std::unique_ptr<cufftHandle, cufftDeleter> qr_to_qk_;   // cufft plan to transform q1[r] and q2[r] to k-space
+    //cufftHandle qk_to_qr_;                                  
+    std::unique_ptr<cufftHandle, cufftDeleter> qk_to_qr_;   // cufft plan to transform q1[k] and q2[k] to real-space
 
     // Simulation constants derived from the input file (see lfts_params.h for details)
     int NA_;

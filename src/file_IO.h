@@ -7,7 +7,7 @@
 #include <iomanip>
 #include <limits>
 #include <cuda.h>
-#include "GPUerror.h"
+#include "gpu_helpers/GPUerror.h"
 
 namespace file_IO {
 

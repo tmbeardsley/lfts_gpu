@@ -6,12 +6,12 @@
 #pragma once
 #include <cuda.h>
 #include "GPUkernels.h"
-#include "GPUerror.h"
+#include "gpu_helpers/GPUerror.h"
 #include "step.h"
 #include <thrust/reduce.h>
 #include <thrust/device_ptr.h>
 #include <memory>
-#include "cuda_smart_pointer.h"
+#include "gpu_helpers/cuda_smart_pointer.h"
 
 
 class diblock {

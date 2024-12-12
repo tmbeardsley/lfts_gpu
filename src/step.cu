@@ -32,6 +32,8 @@ step::step(int NA, int NB, int *m, double *L, int M, int Mk, int TpB) :
     TpB_(TpB),
     g_gpu_(create_unique_cuda_memory<double>(2*Mk)),                // g_gpu_ contains two copies of g[] so that q1[k] and q2[k] can be multiplied on the GPU at the same time
     qk_gpu_(create_unique_cuda_memory<cufftDoubleComplex>(2*Mk)),   // Allocate memory for q1[k] and q2[k], stored in contigious memory
+    qr_to_qk_(new cufftHandle, cufftDeleter()),
+    qk_to_qr_(new cufftHandle, cufftDeleter()),
     NA_(NA),
     NB_(NB),
     M_(M),
@@ -45,8 +47,8 @@ step::step(int NA, int NB, int *m, double *L, int M, int Mk, int TpB) :
     update_g_lookup(L);
 
     // Configure cufft plans. cufftPlanMany used for batched processing
-    GPU_ERR(cufftPlanMany(&qr_to_qk_,3,m_.get(),NULL,1,0,NULL,1,0,CUFFT_D2Z,2));
-    GPU_ERR(cufftPlanMany(&qk_to_qr_,3,m_.get(),NULL,1,0,NULL,1,0,CUFFT_Z2D,2));
+    GPU_ERR(cufftPlanMany(qr_to_qk_.get(), 3, m_.get(), NULL, 1, 0, NULL, 1, 0, CUFFT_D2Z, 2));
+    GPU_ERR(cufftPlanMany(qk_to_qr_.get(), 3, m_.get(), NULL, 1, 0, NULL, 1, 0, CUFFT_Z2D, 2));
 }
 
 
@@ -57,13 +59,13 @@ step::step(int NA, int NB, int *m, double *L, int M, int Mk, int TpB) :
 void step::fwd(double* q_in, double* q_out, double *h_gpu, int i)
 {
     // Fourier transform q{i}(r),q^{N+1-i}(r) to k-space: qk_gpu_(k)
-    GPU_ERR(cufftExecD2Z(qr_to_qk_, q_in, qk_gpu_.get()));
+    GPU_ERR(cufftExecD2Z(*(qr_to_qk_.get()), q_in, qk_gpu_.get()));
 
     // Multiply qk_gpu_(k) by g_gpu_(k)
     Mult_self <<<(2*Mk_+TpB_-1)/TpB_, TpB_>>> (qk_gpu_.get(), g_gpu_.get(), 2*Mk_);
 
     // Fourier transform qk_gpu_(k) to real-space: q_out[r]
-    GPU_ERR(cufftExecZ2D(qk_to_qr_, qk_gpu_.get(), q_out));
+    GPU_ERR(cufftExecZ2D(*(qk_to_qr_.get()), qk_gpu_.get(), q_out));
 
     // Multiply q_out[r] by hA[r] or hB[r] (depending on monomer index) to get q{i+1}(r)
     if (i < NA_) Mult_self<<<(M_+TpB_-1)/TpB_,TpB_>>>(q_out,h_gpu,M_);
@@ -77,8 +79,8 @@ void step::fwd(double* q_in, double* q_out, double *h_gpu, int i)
 
 // Destructor
 step::~step() {
-    GPU_ERR(cufftDestroy(qr_to_qk_));
-    GPU_ERR(cufftDestroy(qk_to_qr_));
+    //GPU_ERR(cufftDestroy(qr_to_qk_));
+    //GPU_ERR(cufftDestroy(qk_to_qr_));
 }
 
 

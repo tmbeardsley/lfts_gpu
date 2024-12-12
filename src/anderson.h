@@ -3,7 +3,7 @@
 // #######################################################
 
 #pragma once
-#include "GPUerror.h"   // GPU error handling kernels
+#include "gpu_helpers/GPUerror.h"   // GPU error handling kernels
 #include "GPUkernels.h" // GPU kernels
 #include "diblock.h"
 #include <thrust/transform_reduce.h>
@@ -13,7 +13,7 @@
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_blas.h>
 #include <memory>
-#include "cuda_smart_pointer.h"
+#include "gpu_helpers/cuda_smart_pointer.h"
 
 
 class anderson {
