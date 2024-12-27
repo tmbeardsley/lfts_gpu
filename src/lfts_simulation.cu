@@ -31,6 +31,11 @@ lfts_simulation::lfts_simulation(std::string inputFile, int TpB)
     // Allocate memory for field array on the GPU
     w_gpu_ = create_unique_cuda_memory<double>(4*M_);
 
+    #ifdef VIEW_FIELD
+        // Create a viewFieldClass instance
+        field_viewer_ = std::make_unique<viewFieldClass>(P_->m());
+    #endif
+
     // Create a new diblock object
     std::cout << "creating diblock object..." << std::endl;
     dbc_ = std::make_unique<diblock>(P_->NA(), P_->NB(), P_->m(), P_->L(), M_, P_->Mk(), TpB);
@@ -45,7 +50,6 @@ lfts_simulation::lfts_simulation(std::string inputFile, int TpB)
 
     // Create new structure strFunc object
     std::cout << "creating strFunc object..." << std::endl;
-    //Sk_ = new strFunc(P_->m(), P_->L(), M_, P_->Mk(), P_->n(), P_->XbN(), TpB);
     Sk_ = std::make_unique<strFunc>(P_->m(), P_->L(), M_, P_->Mk(), P_->n(), P_->XbN(), TpB);
 
     // Read w-[r] and w+[r] from the input file
@@ -86,6 +90,11 @@ void lfts_simulation::equilibrate() {
         AM_->mix(dbc_.get(), 200, 1e-4, w_gpu_.get());
         std::cout << "lnQ = " << dbc_->calc_concs(w_gpu_.get()) << std::endl;
 
+        #ifdef VIEW_FIELD
+            // Update the cpu-based field_viewer_ with data from the GPU.
+            update_field_viewer_data(field_viewer_.get(), w_gpu_.get(), M_);
+        #endif
+
         // Save to file every save_freq_ steps
         if (it%P_->save_freq()==0) { 
             saveStdOutputFile("w_eq_" + std::to_string(it));
@@ -110,6 +119,11 @@ void lfts_simulation::statistics() {
         AM_->mix(dbc_.get(), 200, 1e-4, w_gpu_.get());
         std::cout << "lnQ = " << dbc_->calc_concs(w_gpu_.get()) << std::endl;
 
+        #ifdef VIEW_FIELD
+            // Update the cpu-based field_viewer_ with data from the GPU.
+            update_field_viewer_data(field_viewer_.get(), w_gpu_.get(), M_);
+        #endif
+
         // Sample statistics every sample_freq_ steps
         if (it%P_->sample_freq()==0) {
             Sk_->sample(w_gpu_.get());
@@ -126,6 +140,20 @@ void lfts_simulation::statistics() {
     file_IO::saveGPUArray(w_gpu_.get()+2*M_, "phi_st_" + std::to_string(it-1), 2*M_);
     Sk_->save("struct_st_"+ std::to_string(it-1));
 }
+
+
+#ifdef VIEW_FIELD
+    // Supply data to the field viewer for visualisation.
+    // The viewFieldClass has a callback that runs on a separate thread. 
+    // The mutex makes the update thread safe.
+    void lfts_simulation::update_field_viewer_data(viewFieldClass* field_viewer, double* w_gpu, int M) {
+        {
+            std::lock_guard<std::mutex> lock(field_viewer->getMutex());
+            GPU_ERR(cudaMemcpy(field_viewer->field_arr_ptr(), w_gpu+2*M, M*sizeof(double), cudaMemcpyDeviceToHost));
+        }
+        field_viewer->setBoolUpdate(true);
+    }
+#endif
 
 
 // Calculate the diblock copolymer Hamiltonian

@@ -24,6 +24,13 @@
 #include <memory>
 #include "gpu_helpers/cuda_smart_pointer.h"
 
+#ifdef VIEW_FIELD
+    // Include classes and libraries necessary for visualisation
+    #include "viewFieldClass.h"
+    #include <mutex>
+#endif
+
+
 
 class lfts_simulation {
     unique_cuda_ptr<double> w_gpu_;         // GPU array containing: N*w-(r), N*w+(r), phi-(r), phi+(r)
@@ -33,6 +40,11 @@ class lfts_simulation {
     std::unique_ptr<langevin> Langevin_;    // Langevin object to update w-(r) at each step
     std::unique_ptr<strFunc> Sk_;           // StrFunc object for dealing with sampling and calculating the structure function
     curandGenerator_t RNG_;                 // Random number generator for the GPU
+
+    //std::unique_ptr<double[]> w_cpu_;
+    #ifdef VIEW_FIELD
+        std::unique_ptr<viewFieldClass> field_viewer_;
+    #endif
 
 
     int M_;                     // Total number of field mesh points (constant - contained in lfts_params object but copied for tidier code)
@@ -51,6 +63,11 @@ class lfts_simulation {
 
         // Calculate the diblock copolymer Hamiltonian
         double getH();
+
+        #ifdef VIEW_FIELD
+            // Supply data to the field viewer for visualisation
+            void update_field_viewer_data(viewFieldClass* field_viewer, double* w_gpu, int M);
+        #endif
 
 
     private:

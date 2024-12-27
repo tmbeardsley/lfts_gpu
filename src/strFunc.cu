@@ -32,7 +32,6 @@ strFunc::strFunc(int *m, double *L, int M, int Mk, double CV, double chi_b, int 
     chi_b_(chi_b),
     Mk_(Mk),
     wr_to_wk_(new cufftHandle, cufftDeleter())
-    //wr_to_wk_(std::make_unique<>())
 {
 
     // Allocate memory for S(k) on the GPU
@@ -100,7 +99,6 @@ void strFunc::save(std::string fileName, int dp) {
 
 // Destructor
 strFunc::~strFunc() {
-    //GPU_ERR(cufftDestroy(wr_to_wk_));
 }
 
 
