@@ -36,7 +36,7 @@ While this feature is still under development, the code can be compiled such tha
 <ol>
   <li><b>CMake</b>
     <br><br>
-    <b>cmake -B build -DCMAKE_BUILD_TYPE=Release [-DVIEW_FIELD=on]</b><br>
+    <b>cmake -B build -DCMAKE_BUILD_TYPE=Release -DVIEW_FIELD=on</b><br>
     <b>cmake --build build</b>
   </li>
 </ol>
