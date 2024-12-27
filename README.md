@@ -9,26 +9,38 @@ See https://www.tbeardsley.com/projects/lfts/fts_gpu for a detailed discussion o
 
 ## 2. Required Dependencies
 GSL - GNU Scientific Library (https://www.gnu.org/software/gsl/)<br><br>
-CUDA Toolkit (https://developer.nvidia.com/cuda-toolkit/)<br>
+CUDA Toolkit (https://developer.nvidia.com/cuda-toolkit/)<br><br>
+VTK - The Visualization Toolkit (https://vtk.org/)<br>
 
 ## 3. Compiling
-Two methods of compiling the program are available:<br>
+### 3a. Compiling without visualisation
+Two methods of compiling the program without visualisation are available:<br>
 <ol>
   <li><b>comp.sh</b>
-    <br>
-    A simple bash script to create a 'build' directory containing the compiled program code: lfts-gpu.<br><br>
-    On a Linux system, run the bash script from the top directory via:<br>
+    <br><br>
+    A simple bash script to create a 'build' directory containing the compiled program code: lfts-gpu. On a Linux system, run the bash script from the top directory via:<br><br>
     <b>sh comp.sh</b>
     <br><br>
   </li>
   <li><b>CMake</b>
-    <br>
+    <br><br>
     CMakeLists.txt specifies the required commands for CMake to create (and run) Makefiles, which create a 'build' directory and compile the program code as: lfts-gpu.<br><br>
-    From the top directory, run: <br>
+    From the top directory, run: <br><br>
     <b>cmake -B build -DCMAKE_BUILD_TYPE=Release</b><br>
     <b>cmake --build build</b>
   </li>
 </ol>
+
+### 3b. Compiling with visualisation of the phi-(r) field
+While this feature is still under development, the code can be compiled such that an additional window is displayed to visualise the state of the phi-(r) field as the simulation progresses. This feature can only be enabled via cmake by setting the flag: VIEW_FIELD=on, as shown below.<br>
+<ol>
+  <li><b>CMake</b>
+    <br><br>
+    <b>cmake -B build -DCMAKE_BUILD_TYPE=Release [-DVIEW_FIELD=on]</b><br>
+    <b>cmake --build build</b>
+  </li>
+</ol>
+
 
 
 ## 4. Running the program
