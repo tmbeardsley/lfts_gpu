@@ -31,11 +31,6 @@ lfts_simulation::lfts_simulation(std::string inputFile, int TpB)
     // Allocate memory for field array on the GPU
     w_gpu_ = create_unique_cuda_memory<double>(4*M_);
 
-    #ifdef VIEW_FIELD
-        // Create a viewFieldClass instance
-        field_viewer_ = std::make_unique<viewFieldClass>(P_->m());
-    #endif
-
     // Create a new diblock object
     std::cout << "creating diblock object..." << std::endl;
     dbc_ = std::make_unique<diblock>(P_->NA(), P_->NB(), P_->m(), P_->L(), M_, P_->Mk(), TpB);
@@ -83,24 +78,31 @@ void lfts_simulation::equilibrate() {
     int it;
     for (it=1; it<=P_->equil_its(); it++) {
 
-        // Perform a Langevin step with symmetrised noise to update w-(r)
-        Langevin_->step_wm(w_gpu_.get(), RNG_, P_->XbN(), P_->sigma(), P_->dt());
+        //std::thread equilThread = std::thread([&]() {
 
-        // Calculate saddle point value of w+(r), phi-(r) and phi+(r)
-        AM_->mix(dbc_.get(), 200, 1e-4, w_gpu_.get());
-        std::cout << "lnQ = " << dbc_->calc_concs(w_gpu_.get()) << std::endl;
+            // Perform a Langevin step with symmetrised noise to update w-(r)
+            Langevin_->step_wm(w_gpu_.get(), RNG_, P_->XbN(), P_->sigma(), P_->dt());
 
-        #ifdef VIEW_FIELD
-            // Update the cpu-based field_viewer_ with data from the GPU.
-            update_field_viewer_data(field_viewer_.get(), w_gpu_.get(), M_);
-        #endif
+            // Calculate saddle point value of w+(r), phi-(r) and phi+(r)
+            AM_->mix(dbc_.get(), 200, 1e-4, w_gpu_.get());
+            std::cout << "lnQ = " << dbc_->calc_concs(w_gpu_.get()) << std::endl;
 
-        // Save to file every save_freq_ steps
-        if (it%P_->save_freq()==0) { 
-            saveStdOutputFile("w_eq_" + std::to_string(it));
-            file_IO::saveGPUArray(w_gpu_.get()+2*M_, "phi_eq_"+std::to_string(it), 2*M_);
-        }
+            #ifdef VIEW_FIELD
+                if (field_viewer_) {
+                    // Update the cpu-based field_viewer_ with data from the GPU.
+                    update_field_viewer_data(field_viewer_, w_gpu_.get(), M_);
+                }
+            #endif
+
+            // Save to file every save_freq_ steps
+            if (it%P_->save_freq()==0) { 
+                saveStdOutputFile("w_eq_" + std::to_string(it));
+                file_IO::saveGPUArray(w_gpu_.get()+2*M_, "phi_eq_"+std::to_string(it), 2*M_);
+            }
+
+
     }
+
     // Final save to file at end of equilibration period
     saveStdOutputFile("w_eq_" + std::to_string(it-1));
     file_IO::saveGPUArray(w_gpu_.get()+2*M_, "phi_eq_"+std::to_string(it-1), 2*M_);
@@ -120,8 +122,10 @@ void lfts_simulation::statistics() {
         std::cout << "lnQ = " << dbc_->calc_concs(w_gpu_.get()) << std::endl;
 
         #ifdef VIEW_FIELD
-            // Update the cpu-based field_viewer_ with data from the GPU.
-            update_field_viewer_data(field_viewer_.get(), w_gpu_.get(), M_);
+            if (field_viewer_) {
+                // Update the cpu-based field_viewer_ with data from the GPU.
+                update_field_viewer_data(field_viewer_, w_gpu_.get(), M_);
+            }
         #endif
 
         // Sample statistics every sample_freq_ steps
@@ -144,14 +148,18 @@ void lfts_simulation::statistics() {
 
 #ifdef VIEW_FIELD
     // Supply data to the field viewer for visualisation.
-    // The viewFieldClass has a callback that runs on a separate thread. 
+    // The viewFieldClass has a callback that runs on the main thread. 
     // The mutex makes the update thread safe.
     void lfts_simulation::update_field_viewer_data(viewFieldClass* field_viewer, double* w_gpu, int M) {
         {
             std::lock_guard<std::mutex> lock(field_viewer->getMutex());
             GPU_ERR(cudaMemcpy(field_viewer->field_arr_ptr(), w_gpu+2*M, M*sizeof(double), cudaMemcpyDeviceToHost));
+            field_viewer->setBoolUpdate(true);
         }
-        field_viewer->setBoolUpdate(true);
+    }
+
+    void lfts_simulation::set_field_viewer(viewFieldClass* field_viewer) {
+        field_viewer_ = field_viewer;
     }
 #endif
 

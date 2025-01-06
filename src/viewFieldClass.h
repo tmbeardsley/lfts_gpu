@@ -8,6 +8,7 @@
 // should be set to true each time new data is sent to the field_cpu_[] array, which is achieved via
 // the public member function, 
 // ##################################################################################################
+#pragma once
 
 #include <vtkCamera.h>
 #include <vtkColorTransferFunction.h>
@@ -25,18 +26,18 @@
 #include <vtkPointData.h>
 #include <vtkInteractorStyleTrackballCamera.h>
 
-
 #include <atomic>
 #include <thread>
-
 #include <mutex>
 #include <memory>
+
+
 
 // Forward declaration of UpdateCallback
 class UpdateCallback;
 
 class viewFieldClass {
-    private:
+    public:
         // VTK library classes required for rendering a 3d field
         vtkSmartPointer<vtkDoubleArray> scalarData;
         vtkSmartPointer<vtkStructuredPoints> structuredPoints;
@@ -56,10 +57,11 @@ class viewFieldClass {
         std::unique_ptr<double[]> field_cpu_;       // The data to be visualised
         std::atomic<bool> bool_update;              // Flag should be set to true to indicate new data is available to visualise
         const int M;
+        
 
     public:
         // Constructor
-        viewFieldClass(int *m);
+        viewFieldClass(int *m, int vidSampleRate = -1);
 
         // Destructor
         ~viewFieldClass();
@@ -75,6 +77,13 @@ class viewFieldClass {
 
         // Pointer to the field array memory (so it can be updated directly from the gpu)
         double* field_arr_ptr();
+
+        // Public function to start the interactor
+        void startInteractor();
+    
+    private:
+        // Method to handle window close event
+        void OnWindowClose();
 };
 
 

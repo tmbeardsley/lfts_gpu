@@ -28,22 +28,21 @@
     // Include classes and libraries necessary for visualisation
     #include "viewFieldClass.h"
     #include <mutex>
+    #include <thread>
 #endif
 
 
 
 class lfts_simulation {
     unique_cuda_ptr<double> w_gpu_;         // GPU array containing: N*w-(r), N*w+(r), phi-(r), phi+(r)
-    std::unique_ptr<lfts_params> P_;        // Object to hold the simulation parameters - automatically updates derived parameters
     std::unique_ptr<diblock> dbc_;          // Diblock object for calculating phi-(r) and phi+(r)
     std::unique_ptr<anderson> AM_;          // Anderson mixing object to solve for w+(r)
     std::unique_ptr<langevin> Langevin_;    // Langevin object to update w-(r) at each step
     std::unique_ptr<strFunc> Sk_;           // StrFunc object for dealing with sampling and calculating the structure function
     curandGenerator_t RNG_;                 // Random number generator for the GPU
 
-    //std::unique_ptr<double[]> w_cpu_;
     #ifdef VIEW_FIELD
-        std::unique_ptr<viewFieldClass> field_viewer_;
+        viewFieldClass* field_viewer_ = nullptr;
     #endif
 
 
@@ -64,9 +63,12 @@ class lfts_simulation {
         // Calculate the diblock copolymer Hamiltonian
         double getH();
 
+        std::unique_ptr<lfts_params> P_;        // Object to hold the simulation parameters - automatically updates derived parameters
+
         #ifdef VIEW_FIELD
             // Supply data to the field viewer for visualisation
             void update_field_viewer_data(viewFieldClass* field_viewer, double* w_gpu, int M);
+            void set_field_viewer(viewFieldClass* field_viewer);
         #endif
 
 

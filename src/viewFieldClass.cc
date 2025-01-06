@@ -4,7 +4,7 @@
 
 
 // Constructor
-viewFieldClass::viewFieldClass(int *m) :
+viewFieldClass::viewFieldClass(int *m, int vidSampleRate) :
     bool_update(false),
     M(m[0]*m[1]*m[2])
 {
@@ -63,6 +63,8 @@ viewFieldClass::viewFieldClass(int *m) :
     // Add the renderer to a new render window instance
     this->renWin = vtkSmartPointer<vtkRenderWindow>::New();
     this->renWin->AddRenderer(this->ren);
+    // Enable double buffering
+    this->renWin->DoubleBufferOn();
 
     // Associate the render window with the interactor
     this->interactor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
@@ -77,6 +79,8 @@ viewFieldClass::viewFieldClass(int *m) :
     this->renWin->SetSize(600, 600);
     this->renWin->SetWindowName("View Configuration");
 
+    interactor->Initialize();
+
     // Create a new UpdateCallback class instance and initialise it with a pointer
     // to the current viewFieldClass instance (this), and the vtkDoubleArray
     // instance that wraps the field_cpu_[] array (scalarData).
@@ -86,19 +90,26 @@ viewFieldClass::viewFieldClass(int *m) :
     // Add the callback to the interactor and call it every 50ms to 
     // re-render the scene if necessary.
     interactor->AddObserver(vtkCommand::TimerEvent, callback);
-    interactor->CreateRepeatingTimer(50);
+    interactor->CreateRepeatingTimer(100);
 
-    // Start the rendering and interaction loop in a separate thread
-    interactionThread = std::thread([&]() {
-        interactor->Start();
-    });
+    // Add an observer for the window close event to stop the interactor
+    interactor->AddObserver(vtkCommand::ExitEvent, this, &viewFieldClass::OnWindowClose);
+
+}
+
+// Public function to start the interactor
+void viewFieldClass::startInteractor() {
+    interactor->Start();
+}
+
+// Method to handle window close event
+void viewFieldClass::OnWindowClose() {
+    interactor->TerminateApp();
+    interactor->GetRenderWindow()->Finalize();
 }
 
 // Destructor
 viewFieldClass::~viewFieldClass() {
-    if (interactionThread.joinable()) {
-        interactionThread.join();
-    }
 }
 
 // Getter for bool_update
@@ -121,8 +132,6 @@ std::mutex& viewFieldClass::getMutex() {
 double* viewFieldClass::field_arr_ptr() {
     return field_cpu_.get();
 }
-
-
 
 
 
