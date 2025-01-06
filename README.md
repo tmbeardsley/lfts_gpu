@@ -10,7 +10,7 @@ See https://www.tbeardsley.com/projects/lfts/fts_gpu for a detailed discussion o
 ## 2. Required Dependencies
 GSL - GNU Scientific Library (https://www.gnu.org/software/gsl/)<br><br>
 CUDA Toolkit (https://developer.nvidia.com/cuda-toolkit/)<br><br>
-VTK - The Visualization Toolkit (https://vtk.org/) [Note: Only required for compiling with visualisation enabled]<br>
+VTK - The Visualization Toolkit (https://vtk.org/)<br>[Note: Only required for compiling with visualisation enabled]<br>
 
 ## 3. Compiling
 ### 3a. Compiling without visualisation
